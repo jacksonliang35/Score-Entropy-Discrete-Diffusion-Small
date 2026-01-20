@@ -144,16 +144,12 @@ def main():
     cfg['tokens'] = vocab.size
     print("Number of tokens:", cfg['tokens'])
 
-    # build token graph
+    # build model
     graph = UniformGraph(cfg['tokens'])
-
-    # build score model
     score_model = SEDD(cfg, cfg['tokens']).to(device)
-
+    noise = GeometricNoise(sigma_min=float(cfg['noise']['sigma_min']), sigma_max=float(cfg['noise']['sigma_max'])).to(device)
     num_parameters = sum(p.numel() for p in score_model.parameters())
     print(f"Number of parameters in the model: {num_parameters}")
-
-    noise = GeometricNoise(sigma_min=cfg['noise']['sigma_min'], sigma_max=cfg['noise']['sigma_max']).to(device)
 
     run = Run(experiment="sedd-char")
     run["hparams"] = cfg

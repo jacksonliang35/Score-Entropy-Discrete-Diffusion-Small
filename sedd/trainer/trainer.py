@@ -23,11 +23,10 @@ class Trainer:
         # build optimization state
         optimizer = optimizer = optim.AdamW(
             chain(self.model.parameters(), self.noise.parameters()),
-            lr=cfg['optim']['lr'],
-            betas=(cfg['optim']['beta1'],
-                cfg['optim']['beta2']),
-            eps=cfg['optim']['eps'],
-            weight_decay=cfg['optim']['weight_decay']
+            lr=float(cfg['optim']['lr']),
+            betas=(float(cfg['optim']['beta1']),float(cfg['optim']['beta2'])),
+            eps=float(cfg['optim']['eps']),
+            weight_decay=float(cfg['optim']['weight_decay'])
         )
 
         state = dict(
