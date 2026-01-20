@@ -3,7 +3,7 @@ import torch
 
 import os
 from dataclasses import dataclass
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 
 def ensure_text8(text8_path: str):
     """
