@@ -69,7 +69,7 @@ class Text8Dataset(Dataset):
             text = f.read().strip()
 
         # Build vocab if not provided
-        if vocab is None and split == "train":
+        if vocab is None:
             chars = sorted(set(text))
             stoi = {ch: i for i, ch in enumerate(chars)}
             itos = chars
