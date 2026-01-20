@@ -196,6 +196,64 @@ class DDiTBlock(nn.Module):
             else bias_dropout_add_scale_fused_inference
         )
 
+    def sdpa_varlen_qkvpacked(qkv, cu_seqlens, causal=False):
+        """
+        qkv: (total_tokens, 3, n_heads, head_dim)
+        cu_seqlens: (batch_size + 1,)
+        """
+        H = self.n_heads
+
+        if seqlens is None:
+            # qkv is currently [(B*T), 3, H, D]
+            # reshape back to [B, T, 3, H, D]
+            qkv_bt = qkv.view(batch_size, seq_len, 3, H, -1)
+            q, k, v = qkv_bt.unbind(dim=2)                # [B, T, H, D] each
+
+            # SDPA wants [B, H, T, D]
+            q = q.transpose(1, 2)
+            k = k.transpose(1, 2)
+            v = v.transpose(1, 2)
+
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                dropout_p=0.0,
+                is_causal=False
+            )                                             # [B, H, T, D]
+
+            # Match flash varlen output shape: [(B*T), H, D]
+            x = out.transpose(1, 2).contiguous().view(batch_size * seq_len, H, -1)
+
+        else:
+            # True variable-length: do per-sequence SDPA and concat (correct, slower)
+            outputs = []
+            # cu_seqlens = seqlens.cumsum(-1) in your code; typically need a leading 0
+            # If your cu_seqlens already starts at 0, this will be a no-op.
+            if cu_seqlens[0].item() != 0:
+                cu = torch.cat([torch.zeros(1, dtype=cu_seqlens.dtype, device=cu_seqlens.device), cu_seqlens])
+            else:
+                cu = cu_seqlens
+
+            for i in range(cu.numel() - 1):
+                start = int(cu[i].item())
+                end = int(cu[i + 1].item())
+                q_i, k_i, v_i = qkv[start:end].unbind(dim=1)  # each [L, H, D]
+
+                # [1, H, L, D]
+                q_i = q_i.transpose(0, 1).unsqueeze(0)
+                k_i = k_i.transpose(0, 1).unsqueeze(0)
+        v_i = v_i.transpose(0, 1).unsqueeze(0)
+
+        out_i = F.scaled_dot_product_attention(
+            q_i, k_i, v_i,
+            dropout_p=0.0,
+            is_causal=False
+        )  # [1, H, L, D]
+
+        out_i = out_i.squeeze(0).transpose(0, 1)      # [L, H, D]
+        outputs.append(out_i)
+
+    x = torch.cat(outputs, dim=0)  # [(sum L), H, D]
+    return x
 
     def forward(self, x, rotary_cos_sin, sigma, seqlens=None):
         batch_size, seq_len = x.shape[0], x.shape[1]
@@ -216,6 +274,7 @@ class DDiTBlock(nn.Module):
             qkv = apply_rotary_pos_emb(
                 qkv, cos.to(qkv.dtype), sin.to(qkv.dtype)
             )
+        #################
         qkv = rearrange(qkv, 'b s ... -> (b s) ...')
         if seqlens is None:
             cu_seqlens = torch.arange(
@@ -226,6 +285,7 @@ class DDiTBlock(nn.Module):
             cu_seqlens = seqlens.cumsum(-1)
         x = flash_attn_varlen_qkvpacked_func(
             qkv, cu_seqlens, seq_len, 0., causal=False)
+        #################
 
         x = rearrange(x, '(b s) h d -> b s (h d)', b=batch_size)
 
@@ -281,7 +341,7 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
 
         self.config = config
 
-        vocab_size = vocab_size + 1 # absorbing state
+        # vocab_size = vocab_size + 1 # absorbing state
 
         self.vocab_embed = EmbeddingLayer(config['model']['hidden_size'], vocab_size)
         self.sigma_map = TimestepEmbedder(config['model']['cond_dim'])

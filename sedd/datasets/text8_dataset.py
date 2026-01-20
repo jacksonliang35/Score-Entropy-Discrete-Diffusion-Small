@@ -89,7 +89,7 @@ class Text8Dataset(Dataset):
 
         if num_examples > 0:
             print(f"Subsampling dataset to {num_examples} examples")
-            self.data = self.data[:num_examples]
+            self.data = self.data[:int(num_examples)]
             self.num_examples = min(num_examples, len(self.data)-self.block_size+1)
         else:
             self.num_examples = len(self.data)-self.block_size+1
