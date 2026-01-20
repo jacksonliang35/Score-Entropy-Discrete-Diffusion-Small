@@ -11,9 +11,9 @@ from huggingface_hub import PyTorchModelHubMixin
 from omegaconf import OmegaConf
 
 from .fused_add_dropout_scale import (
-    bias_dropout_add_scale_fused_train, 
-    bias_dropout_add_scale_fused_inference, 
-    get_bias_dropout_add_scale, 
+    bias_dropout_add_scale_fused_train,
+    bias_dropout_add_scale_fused_inference,
+    get_bias_dropout_add_scale,
     modulate_fused,
 )
 
@@ -80,7 +80,7 @@ class LayerNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones([dim]))
         self.dim = dim
     def forward(self, x):
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.cuda.amp.autocast('cuda', enabled=False):
             x = F.layer_norm(x.float(), [self.dim])
         return x * self.weight[None,None,:]
 
@@ -155,7 +155,7 @@ class LabelEmbedder(nn.Module):
     def forward(self, labels):
         embeddings = self.embedding_table(labels)
         return embeddings
-    
+
 
 #################################################################################
 #                                 Core Model                                    #
@@ -182,7 +182,7 @@ class DDiTBlock(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
 
         self.dropout = dropout
-        
+
 
         self.adaLN_modulation = nn.Linear(cond_dim, 6 * dim, bias=True)
         self.adaLN_modulation.weight.data.zero_()
@@ -211,7 +211,7 @@ class DDiTBlock(nn.Module):
 
         qkv = self.attn_qkv(x)
         qkv = rearrange(qkv, 'b s (three h d) -> b s three h d', three=3, h=self.n_heads)
-        with torch.cuda.amp.autocast(enabled=False):
+        with torch.cuda.amp.autocast('cuda', enabled=False):
             cos, sin = rotary_cos_sin
             qkv = apply_rotary_pos_emb(
                 qkv, cos.to(qkv.dtype), sin.to(qkv.dtype)
@@ -226,7 +226,7 @@ class DDiTBlock(nn.Module):
             cu_seqlens = seqlens.cumsum(-1)
         x = flash_attn_varlen_qkvpacked_func(
             qkv, cu_seqlens, seq_len, 0., causal=False)
-        
+
         x = rearrange(x, '(b s) h d -> b s (h d)', b=batch_size)
 
         x = bias_dropout_scale_fn(self.attn_out(x), None, gate_msa, x_skip, self.dropout)
@@ -240,7 +240,7 @@ class DDiTBlock(nn.Module):
 class EmbeddingLayer(nn.Module):
     def __init__(self, dim, vocab_dim):
         """
-        Mode arg: 0 -> use a learned layer, 1 -> use eigenvectors, 
+        Mode arg: 0 -> use a learned layer, 1 -> use eigenvectors,
         2-> add in eigenvectors, 3 -> use pretrained embedding matrix
         """
         super().__init__()
@@ -293,7 +293,7 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
 
         self.output_layer = DDitFinalLayer(config['model']['hidden_size'], vocab_size, config['model']['cond_dim'])
 
-    
+
     def _get_bias_dropout_scale(self):
         return (
             bias_dropout_add_scale_fused_train
@@ -308,7 +308,7 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
         rotary_cos_sin = self.rotary_emb(x)
 
         # Run transformer blocks
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        with torch.cuda.amp.autocast('cuda', dtype=torch.bfloat16):
             for i in range(len(self.blocks)):
                 x = self.blocks[i](x, rotary_cos_sin, c, seqlens=None)
 
@@ -327,14 +327,14 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
 
 def score_fn(model, x, sigma, train=True, sampling=False):
     sigma = sigma.reshape(-1)
-    
+
     if train:
         model.train()
     else:
         model.eval()
 
     score = model(x, sigma)
-    
+
     if sampling:
         # when sampling return true score (not log used for training)
         return score.exp()

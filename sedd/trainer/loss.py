@@ -10,9 +10,9 @@ def loss_fn(batch, model, noise, graph, train=True, t=None, perturbed_batch=None
 
     if t is None:
         t = (1 - sampling_eps) * torch.rand(batch.shape[0], device=batch.device) + sampling_eps
-        
+
     sigma, dsigma = noise(t)
-    
+
     if perturbed_batch is None:
         perturbed_batch = graph.sample_transition(batch, sigma[:, None])
 
@@ -31,10 +31,10 @@ def step_fn(cfg, state, batch, train=True):
     model = state['model']
     noise = state['noise']
     graph = state['graph']
-    warmup = cfg['optim']['warmup']
-    accum = cfg['training']['accum']
-    lr = cfg['optim']['lr']
-    step = state['step']
+    warmup = int(cfg['optim']['warmup'])
+    accum = int(cfg['training']['accum'])
+    lr = float(cfg['optim']['lr'])
+    step = int(state['step'])
     grad_clip = 1.
 
     optimizer = state['optimizer']
