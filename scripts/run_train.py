@@ -59,10 +59,9 @@ def main():
 
     # load in tokenizer
     # tokenizer = OxTokenizer()
-    tokenizer = ABCTokenizer()
     # tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
-    print("Got EOS token: ", tokenizer.eos_token)
-    tokenizer.pad_token = '' # make sure we pad with absorbing token
+    # print("Got EOS token: ", tokenizer.eos_token)
+    # tokenizer.pad_token = '' # make sure we pad with absorbing token
 
     with open(args.cfg, 'r') as f:
         cfg = yaml.full_load(f)
@@ -75,10 +74,12 @@ def main():
     work_dir = cfg['training']['output_dir']
     sample_dir = os.path.join(work_dir, "samples")
     checkpoint_dir = os.path.join(work_dir, "checkpoints")
+    data_dir = os.path.join(work_dir, "data")
     # checkpoint_meta_dir = os.path.join(work_dir, "checkpoints-meta", "checkpoint.pth")
-    os.makedirs.makedirs(sample_dir, exist_ok=True)
-    os.makedirs.makedirs(checkpoint_dir, exist_ok=True)
-    # os.makedirs.makedirs(os.path.dirname(checkpoint_meta_dir), exist_ok=True)
+    os.makedirs(sample_dir, exist_ok=True)
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(data_dir, exist_ok=True)
+    # os.path.makedirs(os.path.dirname(checkpoint_meta_dir), exist_ok=True)
 
     print(work_dir)
     print(cfg)
@@ -96,18 +97,18 @@ def main():
     # mprint(cfg)
     # device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
 
-    if device.type == "cuda":
-        mprint("Found {} CUDA devices.".format(torch.cuda.device_count()))
-        for i in range(torch.cuda.device_count()):
-            props = torch.cuda.get_device_properties(i)
-            mprint(
-                "{} \t Memory: {:.2f}GB".format(
-                    props.name, props.total_memory / (1024 ** 3)
-                )
-            )
-    else:
-        mprint("WARNING: Using device {}".format(device))
-    mprint(f"Found {os.cpu_count()} total number of CPUs.")
+    # if device.type == "cuda":
+    #     mprint("Found {} CUDA devices.".format(torch.cuda.device_count()))
+    #     for i in range(torch.cuda.device_count()):
+    #         props = torch.cuda.get_device_properties(i)
+    #         mprint(
+    #             "{} \t Memory: {:.2f}GB".format(
+    #                 props.name, props.total_memory / (1024 ** 3)
+    #             )
+    #         )
+    # else:
+    #     mprint("WARNING: Using device {}".format(device))
+    # mprint(f"Found {os.cpu_count()} total number of CPUs.")
 
     # # Create remote oxen repo
     # repo = oxen.RemoteRepo(cfg['data']['remote_repo'])
@@ -128,17 +129,19 @@ def main():
     # eval_ds = DataLoader(ABCDataset(tokenizer, seq_len=cfg['model']['length'], num_examples=128))
 
     train_ds, vocab = make_text8_loaders(
+        data_dir,
         block_size=cfg['model']['length'],
         batch_size=cfg['training']['batch_size'],
         num_examples = 32768
     )
     eval_ds, _ = make_text8_loaders(
+        data_dir,
         block_size=cfg['model']['length'],
         batch_size=cfg['eval']['batch_size'],
-        train=False
+        train=False,
         num_examples = 128
     )
-    cfg['tokens'] = vocab.size()
+    cfg['tokens'] = vocab.size
     print("Number of tokens:", cfg['tokens'])
 
     # build token graph

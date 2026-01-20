@@ -43,7 +43,7 @@ def main():
         os.path.join(self.checkpoint_dir, "checkpoint.pth"),
         map_location=self.device
     )
-    vocab_size = cfg['tokens'].size()
+    vocab_size = cfg['tokens'].size
     sedd_model = SEDD(cfg, vocab_size).to(device)
     sedd_model.load_state_dict(loaded_state['model'])
 

@@ -74,7 +74,7 @@ class Text8Dataset(Dataset):
             stoi = {ch: i for i, ch in enumerate(chars)}
             itos = chars
             vocab = Text8Vocab(stoi=stoi, itos=itos)
-        # self.vocab = vocab
+        self.vocab = vocab
 
         data = self.vocab.encode(text)  # [N]
         n = len(data)
@@ -87,7 +87,7 @@ class Text8Dataset(Dataset):
 
         if num_examples > 0:
             print(f"Subsampling dataset to {num_examples} examples")
-            self.data = self.data.select(range(num_examples))
+            self.data = self.data[:num_examples]
         self.block_size = block_size
 
         self.num_examples = min(num_examples, len(self.data)-self.block_size+1)
@@ -102,13 +102,13 @@ class Text8Dataset(Dataset):
 def make_text8_loaders(
     data_dir: str,
     block_size: int = 64,
-    batch_size: int = 256,
+    batch_size: int = 64,
     num_examples: int = -1,
     num_workers: int = 1,
     train: bool = True,
     pin_memory: bool = True,
 ):
-    text8_path = os.path.join(ensure_text8(text8_path), 'text8')
+    text8_path = os.path.join(data_dir, 'text8')
     ensure_text8(text8_path)
     # Build train first to create vocab, then reuse for val
     # train_ds = Text8Dataset(data_path, block_size=block_size, split="train")
@@ -140,13 +140,10 @@ def make_text8_loaders(
 
 # ---- Example usage ----
 if __name__ == "__main__":
-    text8_path = "text8"  # path to the extracted text8 file
-    train_loader, val_loader, vocab = make_text8_loaders(
-        text8_path=text8_path,
-        block_size=256,
+    train_loader, vocab = make_text8_loaders(
+        data_dir='data',
+        block_size=64,
         batch_size=64,
+        num_examples=128,
     )
-
-    xb, yb = next(iter(train_loader))
-    print("x:", xb.shape, "y:", yb.shape, "vocab:", vocab.size)
-    print("sample:", vocab.decode(xb[0][:80]))
+    print(vocab.size)
