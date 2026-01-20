@@ -104,15 +104,16 @@ def make_text8_loaders(
     batch_size: int = 256,
     num_workers: int = 1,
     train: bool = True,
-    pin_memory: bool = True
+    pin_memory: bool = True,
+    num_examples: int = -1
 ):
     # Build train first to create vocab, then reuse for val
     # train_ds = Text8Dataset(data_path, block_size=block_size, split="train")
     # val_ds = Text8Dataset(data_path, block_size=block_size, split="val", vocab=train_ds.vocab)
     if train:
-        dataset = Text8Dataset(data_path, block_size=block_size, split='train')
+        dataset = Text8Dataset(data_path, block_size=block_size, split='train', num_examples=num_examples)
     else:
-        dataset = Text8Dataset(data_path, block_size=block_size, split='val')
+        dataset = Text8Dataset(data_path, block_size=block_size, split='val', num_examples=num_examples)
 
     dataloader = DataLoader(
         train_ds,
