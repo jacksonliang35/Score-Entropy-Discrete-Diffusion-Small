@@ -65,7 +65,6 @@ class Text8Dataset(Dataset):
         assert 0.0 < train_frac < 1.0
         assert block_size >= 2
 
-        ensure_text8(text8_path)
         with open(text8_path, "r", encoding="utf-8") as f:
             text = f.read().strip()
 
@@ -101,7 +100,7 @@ class Text8Dataset(Dataset):
 
 
 def make_text8_loaders(
-    data_path: str,
+    data_dir: str,
     block_size: int = 64,
     batch_size: int = 256,
     num_examples: int = -1,
@@ -109,13 +108,15 @@ def make_text8_loaders(
     train: bool = True,
     pin_memory: bool = True,
 ):
+    text8_path = os.path.join(ensure_text8(text8_path), 'text8')
+    ensure_text8(text8_path)
     # Build train first to create vocab, then reuse for val
     # train_ds = Text8Dataset(data_path, block_size=block_size, split="train")
     # val_ds = Text8Dataset(data_path, block_size=block_size, split="val", vocab=train_ds.vocab)
     if train:
-        dataset = Text8Dataset(data_path, block_size=block_size, split='train', num_examples=num_examples)
+        dataset = Text8Dataset(text8_path, block_size=block_size, split='train', num_examples=num_examples)
     else:
-        dataset = Text8Dataset(data_path, block_size=block_size, split='val', num_examples=num_examples)
+        dataset = Text8Dataset(text8_path, block_size=block_size, split='val', num_examples=num_examples)
 
     dataloader = DataLoader(
         dataset,
