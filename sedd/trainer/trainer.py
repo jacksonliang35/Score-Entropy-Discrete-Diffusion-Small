@@ -54,7 +54,7 @@ class Trainer:
 
         n_epochs = cfg['training']['n_epochs']
         while state['epoch'] < n_epochs:
-            print(f"Epoch {e}")
+            print(f"Epoch {state['epoch']}")
             for batch in dataset:
                 self.step(state, batch)
 
