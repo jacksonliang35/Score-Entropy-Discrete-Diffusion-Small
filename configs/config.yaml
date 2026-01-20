@@ -1,5 +1,5 @@
 ngpus: 1
-tokens: 256
+# tokens: 256
 
 training:
   batch_size: 64

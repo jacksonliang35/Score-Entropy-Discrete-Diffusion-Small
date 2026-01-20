@@ -2,14 +2,12 @@ import os
 import torch
 import argparse
 import yaml
-# from transformers import GPT2TokenizerFast
-from sedd.tokenizers.abc_tokenizer import ABCTokenizer
+# from sedd.tokenizers.abc_tokenizer import ABCTokenizer
 
 from sedd.models.sedd import SEDD
 from sedd.models.graph import UniformGraph, AbsorbingGraph
 from sedd.models.noise import GeometricNoise, LogLinearNoise
 from sedd.models.sampler import Sampler
-from sedd.datasets.abc_dataset import ABCDataset
 from sedd.eval.evaluator import Evaluator
 
 def main():
@@ -25,39 +23,45 @@ def main():
     with open(args.cfg, 'r') as f:
         cfg = yaml.full_load(f)
 
-    # Load the tokenizer
-    # tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
-    tokenizer = ABCTokenizer()
+    # Load the evaluation data
+    eval_ds, vocab = make_text8_loaders(
+        block_size=cfg['model']['length'],
+        batch_size=cfg['eval']['batch_size'],
+        train=False,
+        num_examples=128
+    )
 
-    print("Vocab size: ", tokenizer.vocab_size)
-    print("Last token in vocab: ", tokenizer.decode([tokenizer.vocab_size-1]))
-    print("Past vocab size: ", tokenizer.batch_decode([[tokenizer.vocab_size]]))
+    device = torch.device('cuda')
+
+    # print("Vocab size: ", tokenizer.vocab_size)
+    # print("Last token in vocab: ", tokenizer.decode([tokenizer.vocab_size-1]))
+    # print("Past vocab size: ", tokenizer.batch_decode([[tokenizer.vocab_size]]))
 
     # Load the model onto GPU
-    device = torch.device('cuda')
+
     loaded_state = torch.load(
         os.path.join(self.checkpoint_dir, "checkpoint.pth"),
         map_location=self.device
     )
-    model = SEDD(cfg, tokenizer.vocab_size).to(device)
-    model.load_state_dict(loaded_state['model'])
+    vocab_size = cfg['tokens'].size()
+    sedd_model = SEDD(cfg, vocab_size).to(device)
+    sedd_model.load_state_dict(loaded_state['model'])
 
     # Load the transition graph
-    graph = AbsorbingGraph(tokenizer.vocab_size)
+    graph = UniformGraph(vocab_size)
 
     # Load the noise function
-    noise = LogLinearNoise().to(device)
+    noise = GeometricNoise(sigma_min=cfg['noise']['sigma_min'], sigma_max=cfg['noise']['sigma_max']).to(device)
 
     sampler = Sampler(cfg, device=device)
-    texts = sampler.sample(tokenizer, model, graph, noise, steps=args.steps, show_intermediate=args.show_intermediate)
+    texts = sampler.sample(vocab, sedd_model, graph, noise, steps=args.steps, show_intermediate=args.show_intermediate)
 
     for i in texts:
         print("="*80)
         print(i)
         print("="*80)
 
-    eval_ds = DataLoader(ABCDataset(tokenizer, seq_len=cfg['model']['length'], num_examples=128))
-    Evaluator(eval_ds, cfg, device=device).evaluate(loaded_state)
+    Evaluator(eval_ds, cfg, device=device).evaluate_ppl(texts)
 
 if __name__=="__main__":
     main()

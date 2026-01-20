@@ -13,7 +13,6 @@ __pycache__
 **/exp/
 **/exp_local/
 data/
-eval/
 **.pth
 **.npz
 core
