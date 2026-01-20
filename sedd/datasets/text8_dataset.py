@@ -4,6 +4,7 @@ import torch
 import os
 from dataclasses import dataclass
 from typing import Dict, Tuple, List, Union
+import urllib.request
 
 def ensure_text8(text8_path: str):
     """
