@@ -79,10 +79,10 @@ class Trainer:
             # torch.save(state['model'].state_dict(), os.path.join(self.checkpoint_dir, f'checkpoint.pth'))
             torch.save(
                 {
-                    "model": model.state_dict(),
-                    "optimizer": optimizer.state_dict(),
-                    "step": step,
-                    "epoch": epoch,
+                    "model": state['model'].state_dict(),
+                    "optimizer": state['optimizer'].state_dict(),
+                    "step": state['step'],
+                    "epoch": state['epoch'],
                     "noise": state['noise'],
                     "graph": state['graph']
                 },

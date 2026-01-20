@@ -2,13 +2,13 @@ ngpus: 1
 # tokens: 256
 
 training:
-  batch_size: 64
+  batch_size: 512
   accum: 1
   n_iters: 1000000
   n_epochs: 1000
-  snapshot_freq: 100
+  snapshot_freq: 1000
   log_freq: 50
-  eval_freq: 100
+  eval_freq: 200
   weight: standard
   snapshot_sampling: True
   ema: 0.9999
@@ -16,7 +16,7 @@ training:
 model:
   hidden_size: 512
   cond_dim: 128
-  length: 32
+  length: 64
   n_blocks: 8
   n_heads: 8
   dropout: 0.1
@@ -42,9 +42,9 @@ sampling:
   noise_removal: True
 
 eval:
-  batch_size: 16
+  batch_size: 128
   perplexity: True
-  perplexity_batch_size: 4
+  perplexity_batch_size: 32
 
 optim:
   weight_decay: 0

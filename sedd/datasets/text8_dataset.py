@@ -57,7 +57,7 @@ class Text8Dataset(Dataset):
         text8_path: str,
         block_size: int = 256,
         split: str = 'train',
-        train_frac: float = 0.9,
+        train_frac: float = 0.8,
         vocab: Text8Vocab = None,
         num_examples: int = -1
     ):
@@ -85,12 +85,16 @@ class Text8Dataset(Dataset):
         else:
             self.data = data[split_idx:]
 
+        self.block_size = block_size
+        self.num_examples = len(self.data)-self.block_size+1
+
         if num_examples > 0:
             print(f"Subsampling dataset to {num_examples} examples")
             self.data = self.data[:num_examples]
-        self.block_size = block_size
+            self.num_examples = min(num_examples, self.num_examples)
 
-        self.num_examples = min(num_examples, len(self.data)-self.block_size+1)
+
+
 
     def __len__(self) -> int:
         return self.num_examples
