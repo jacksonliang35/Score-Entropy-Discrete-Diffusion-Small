@@ -132,14 +132,14 @@ def main():
         data_dir,
         block_size=cfg['model']['length'],
         batch_size=cfg['training']['batch_size'],
-        # num_examples = 32768
+        num_examples = 1e6
     )
     eval_ds, _ = make_text8_loaders(
         data_dir,
         block_size=cfg['model']['length'],
         batch_size=cfg['eval']['batch_size'],
         train=False,
-        # num_examples = 128
+        num_examples = 1024,
     )
     cfg['tokens'] = vocab.size
     print("Number of tokens:", cfg['tokens'])

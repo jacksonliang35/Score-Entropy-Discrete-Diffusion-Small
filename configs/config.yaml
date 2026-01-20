@@ -2,7 +2,7 @@ ngpus: 1
 # tokens: 256
 
 training:
-  batch_size: 512
+  batch_size: 256
   accum: 1
   n_iters: 1000000
   n_epochs: 1000
@@ -42,7 +42,7 @@ sampling:
   noise_removal: True
 
 eval:
-  batch_size: 128
+  batch_size: 256
   perplexity: True
   perplexity_batch_size: 32
 

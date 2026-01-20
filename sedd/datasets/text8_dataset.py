@@ -105,7 +105,7 @@ class Text8Dataset(Dataset):
 
 def make_text8_loaders(
     data_dir: str,
-    block_size: int = 64,
+    block_size: int = 256,
     batch_size: int = 64,
     num_examples: int = -1,
     num_workers: int = 1,
@@ -129,6 +129,7 @@ def make_text8_loaders(
         num_workers=num_workers,
         pin_memory=pin_memory,
         drop_last=True,
+        num_workers=0
     )
     # val_loader = DataLoader(
     #     val_ds,
