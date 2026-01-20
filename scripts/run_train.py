@@ -4,7 +4,6 @@ import yaml
 import datetime
 import gc
 from itertools import chain
-import utils
 
 import numpy as np
 import torch
@@ -86,15 +85,16 @@ def main():
     device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
     print_devices(device)
 
-    # logging
-    logger = utils.get_logger(os.path.join(work_dir, "logs"))
-    def mprint(msg):
-        if rank == 0:
-            logger.info(msg)
-
-    mprint(work_dir)
-    mprint(cfg)
-    device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    # # logging
+    # logger = utils.get_logger(os.path.join(work_dir, "logs"))
+    # def mprint(msg):
+    #     if rank == 0:
+    #         logger.info(msg)
+    #
+    # mprint(work_dir)
+    # mprint(cfg)
+    # device = torch.device(f"cuda:0" if torch.cuda.is_available() else "cpu")
+    
     if device.type == "cuda":
         mprint("Found {} CUDA devices.".format(torch.cuda.device_count()))
         for i in range(torch.cuda.device_count()):
