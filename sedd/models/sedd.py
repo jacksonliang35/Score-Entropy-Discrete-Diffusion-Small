@@ -80,7 +80,7 @@ class LayerNorm(nn.Module):
         self.weight = nn.Parameter(torch.ones([dim]))
         self.dim = dim
     def forward(self, x):
-        with torch.cuda.amp.autocast('cuda', enabled=False):
+        with torch.amp.autocast('cuda', enabled=False):
             x = F.layer_norm(x.float(), [self.dim])
         return x * self.weight[None,None,:]
 
@@ -211,7 +211,7 @@ class DDiTBlock(nn.Module):
 
         qkv = self.attn_qkv(x)
         qkv = rearrange(qkv, 'b s (three h d) -> b s three h d', three=3, h=self.n_heads)
-        with torch.cuda.amp.autocast('cuda', enabled=False):
+        with torch.amp.autocast('cuda', enabled=False):
             cos, sin = rotary_cos_sin
             qkv = apply_rotary_pos_emb(
                 qkv, cos.to(qkv.dtype), sin.to(qkv.dtype)
@@ -308,7 +308,7 @@ class SEDD(nn.Module, PyTorchModelHubMixin):
         rotary_cos_sin = self.rotary_emb(x)
 
         # Run transformer blocks
-        with torch.cuda.amp.autocast('cuda', dtype=torch.bfloat16):
+        with torch.amp.autocast('cuda', dtype=torch.bfloat16):
             for i in range(len(self.blocks)):
                 x = self.blocks[i](x, rotary_cos_sin, c, seqlens=None)
 
