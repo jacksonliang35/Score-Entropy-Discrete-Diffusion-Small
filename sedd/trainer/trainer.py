@@ -35,11 +35,26 @@ class Trainer:
             model=self.model,
             noise=self.noise,
             graph=self.graph,
-            step=0
+            step=0,
+            epoch=0
         )
 
+        # Recover from checkpoint
+        if os.path.exists(os.path.join(self.checkpoint_dir, "checkpoint.pth")):
+            print("Checkpoint exists, loading...")
+            ckpt = torch.load(
+                os.path.join(self.checkpoint_dir, "checkpoint.pth"),
+                map_location=self.device
+            )
+            state['model'].load_state_dict(ckpt["model"])
+            state['optimizer'].load_state_dict(ckpt["optimizer"])
+            state['step'] = ckpt["step"]
+            state['epoch'] = ckpt["epoch"]
+        else:
+            print("No checkpoint found, training from scratch.")
+
         n_epochs = cfg['training']['n_epochs']
-        for e in range(n_epochs):
+        while state['epoch'] < n_epochs:
             print(f"Epoch {e}")
             for batch in dataset:
                 self.step(state, batch)
@@ -62,7 +77,18 @@ class Trainer:
                 self.eval_callback(state)
 
         if step % cfg['training']['snapshot_freq'] == 0:
-            torch.save(state['model'].state_dict(), os.path.join(self.checkpoint_dir, f'checkpoint.pth'))
+            # torch.save(state['model'].state_dict(), os.path.join(self.checkpoint_dir, f'checkpoint.pth'))
+            torch.save(
+                {
+                    "model": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "step": step,
+                    "epoch": epoch,
+                    "noise": state['noise'],
+                    "graph": state['graph']
+                },
+                os.path.join(self.checkpoint_dir, 'checkpoint.pth')
+            )
 
         if step > 0 and step % cfg['training']['snapshot_freq'] == 0:
             # Generate and save samples
