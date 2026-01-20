@@ -75,10 +75,10 @@ def main():
     work_dir = cfg['training']['output_dir']
     sample_dir = os.path.join(work_dir, "samples")
     checkpoint_dir = os.path.join(work_dir, "checkpoints")
-    checkpoint_meta_dir = os.path.join(work_dir, "checkpoints-meta", "checkpoint.pth")
-    utils.makedirs(sample_dir)
-    utils.makedirs(checkpoint_dir)
-    utils.makedirs(os.path.dirname(checkpoint_meta_dir))
+    # checkpoint_meta_dir = os.path.join(work_dir, "checkpoints-meta", "checkpoint.pth")
+    os.makedirs.makedirs(sample_dir, exist_ok=True)
+    os.makedirs.makedirs(checkpoint_dir, exist_ok=True)
+    # os.makedirs.makedirs(os.path.dirname(checkpoint_meta_dir), exist_ok=True)
 
     print(work_dir)
     print(cfg)
@@ -141,7 +141,7 @@ def main():
     run["hparams"] = cfg
 
     def eval(state):
-        evaluator = Evaluator(eval_ds, run, cfg, device=device)
+        evaluator = Evaluator(eval_ds, cfg, run=run, device=device)
         return evaluator.evaluate(state)
 
     def sample(state):

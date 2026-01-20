@@ -6,9 +6,11 @@ import yaml
 from sedd.tokenizers.abc_tokenizer import ABCTokenizer
 
 from sedd.models.sedd import SEDD
-from sedd.models.graph import AbsorbingGraph
-from sedd.models.noise import LogLinearNoise
+from sedd.models.graph import UniformGraph, AbsorbingGraph
+from sedd.models.noise import GeometricNoise, LogLinearNoise
 from sedd.models.sampler import Sampler
+from sedd.datasets.abc_dataset import ABCDataset
+from sedd.eval.evaluator import Evaluator
 
 def main():
     parser = argparse.ArgumentParser(description="Generate some samples")
@@ -53,6 +55,9 @@ def main():
         print("="*80)
         print(i)
         print("="*80)
+
+    eval_ds = DataLoader(ABCDataset(tokenizer, seq_len=cfg['model']['length'], num_examples=128))
+    Evaluator(eval_ds, cfg, device=device).evaluate(loaded_state)
 
 if __name__=="__main__":
     main()

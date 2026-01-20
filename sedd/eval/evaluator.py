@@ -5,12 +5,12 @@ from tqdm import tqdm
 from ..trainer.loss import step_fn
 
 class Evaluator:
-    def __init__(self, dataset, run, cfg, device = 'cuda'):
+    def __init__(self, dataset, cfg, run=None, device = 'cuda'):
         self.dataset = dataset
         self.run = run
         self.cfg = cfg
         self.device = device
-        
+
     def evaluate(self, state):
         step = state['step']
         sum_loss = 0
@@ -21,9 +21,10 @@ class Evaluator:
             sum_loss += loss.item()
         avg_loss = sum_loss / len(self.dataset)
         print("step: %d, evaluation_loss: %.5e" % (step, avg_loss))
-        self.run.track(avg_loss, name='loss', step=state['step'], context={ "subset":"eval" })
+        if self.run is not None:
+            self.run.track(avg_loss, name='loss', step=state['step'], context={ "subset":"eval" })
         return avg_loss
-    
+
     def evaluate_batch(self, state, batch):
         model = state['model']
         model.eval()
