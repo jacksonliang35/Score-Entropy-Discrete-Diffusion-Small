@@ -129,7 +129,6 @@ def make_text8_loaders(
         num_workers=num_workers,
         pin_memory=pin_memory,
         drop_last=True,
-        num_workers=0
     )
     # val_loader = DataLoader(
     #     val_ds,
