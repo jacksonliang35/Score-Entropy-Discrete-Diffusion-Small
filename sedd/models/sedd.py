@@ -252,8 +252,8 @@ class DDiTBlock(nn.Module):
         out_i = out_i.squeeze(0).transpose(0, 1)      # [L, H, D]
         outputs.append(out_i)
 
-    x = torch.cat(outputs, dim=0)  # [(sum L), H, D]
-    return x
+        x = torch.cat(outputs, dim=0)  # [(sum L), H, D]
+        return x
 
     def forward(self, x, rotary_cos_sin, sigma, seqlens=None):
         batch_size, seq_len = x.shape[0], x.shape[1]
